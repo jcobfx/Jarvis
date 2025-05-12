@@ -1,6 +1,5 @@
 package pl.com.foks.jarvis.interpreter
 
-import pl.com.foks.jarvis.models.Expression
 import pl.com.foks.jarvis.util.Tuple
 
 class Environment(val parent: Environment?, val mutable: Boolean = true) {
