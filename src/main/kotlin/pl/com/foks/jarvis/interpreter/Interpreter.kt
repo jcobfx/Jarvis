@@ -1,5 +1,7 @@
 package pl.com.foks.jarvis.interpreter
 
+import pl.com.foks.jarvis.exceptions.InterpreterException
+import pl.com.foks.jarvis.exceptions.UnknownOperatorException
 import pl.com.foks.jarvis.models.AssignmentStatement
 import pl.com.foks.jarvis.models.BinaryExpression
 import pl.com.foks.jarvis.models.ClassAssignmentStatement
@@ -26,11 +28,17 @@ import pl.com.foks.jarvis.types.Tuple
 class Interpreter(private val environment: Environment = Environment(null)) : ExpressionVisitor<Any?>,
     StatementVisitor<Any?> {
     fun interpret(statements: List<Statement>): Tuple {
-        statements.forEach { statement ->
-            if (statement is ReturnStatement) {
-                return statement.accept(this) as Tuple
+        for (statement in statements) {
+            try {
+                if (statement is ReturnStatement) {
+                    return statement.accept(this) as Tuple
+                }
+                statement.accept(this)
+            } catch (e: InterpreterException) {
+                println("Error: ${e.message}")
+                println("In statement: $statement")
+                continue
             }
-            statement.accept(this)
         }
         return Tuple()
     }
@@ -41,7 +49,7 @@ class Interpreter(private val environment: Environment = Environment(null)) : Ex
         return when (expression.operator) {
             TokenType.AND -> left as Boolean && right as Boolean
             TokenType.OR -> left as Boolean || right as Boolean
-            else -> throw IllegalArgumentException("Unknown operator: ${expression.operator}")
+            else -> throw UnknownOperatorException(expression.operator)
         }
     }
 
@@ -59,7 +67,7 @@ class Interpreter(private val environment: Environment = Environment(null)) : Ex
             TokenType.LESS_THAN_EQUALS -> (left as Double) <= (right as Double)
             TokenType.GREATER_THAN -> (left as Double) > (right as Double)
             TokenType.GREATER_THAN_EQUALS -> (left as Double) >= (right as Double)
-            else -> throw IllegalArgumentException("Unknown operator: ${expression.operator}")
+            else -> throw UnknownOperatorException(expression.operator)
         }
     }
 
@@ -68,7 +76,7 @@ class Interpreter(private val environment: Environment = Environment(null)) : Ex
         return when (expression.operator) {
             TokenType.MINUS -> -(operand as Double)
             TokenType.NOT -> !(operand as Boolean)
-            else -> throw IllegalArgumentException("Unknown operator: ${expression.operator}")
+            else -> throw UnknownOperatorException(expression.operator)
         }
     }
 
@@ -137,6 +145,8 @@ class Interpreter(private val environment: Environment = Environment(null)) : Ex
         val value = statement.expression?.accept(this)
         if (value is Tuple) {
             return value
+        } else if (value == null) {
+            return Tuple()
         }
         return Tuple(value)
     }

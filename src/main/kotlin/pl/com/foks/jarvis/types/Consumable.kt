@@ -1,10 +1,11 @@
 package pl.com.foks.jarvis.types
 
+import pl.com.foks.jarvis.exceptions.InvalidArgumentCountException
 import pl.com.foks.jarvis.interpreter.Environment
 import pl.com.foks.jarvis.interpreter.Interpreter
 import pl.com.foks.jarvis.models.Statement
 
-fun interface Consumable {
+interface Consumable {
     fun consume(arguments: List<Any?>): Any
 }
 
@@ -21,7 +22,7 @@ open class Consumer : Consumable {
 
     override fun consume(arguments: List<Any?>): Any {
         if (arguments.size != parameters.size) {
-            throw IllegalArgumentException("Invalid number of arguments: expected ${parameters.size}, got ${arguments.size}")
+            throw InvalidArgumentCountException(parameters.size,arguments.size)
         }
         for (i in parameters.indices) {
             environment.assign(parameters[i], arguments[i])

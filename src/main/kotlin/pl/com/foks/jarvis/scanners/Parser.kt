@@ -54,6 +54,7 @@ class Parser {
                     parseExpressionStatement(token)
                 }
             }
+
             TokenType.NUMBER, TokenType.LITERAL, TokenType.PARENTHESES_OPEN -> parseExpressionStatement(token)
             else -> throw UnexpectedTokenException(
                 arrayOf(
@@ -89,11 +90,14 @@ class Parser {
             body.add(parseStatement())
         }
         consumeExpected(TokenType.RETURN)
-        if (check(TokenType.SELF)) {
+        if (check(TokenType.CLASS)) {
             consume()
             return ClassAssignmentStatement(token.value, parameters, body)
+        } else if (check(TokenType.EOL, TokenType.EOF)) {
+            body.add(parseReturnStatement(null))
+        } else {
+            body.add(parseReturnStatement(consume()))
         }
-        body.add(parseReturnStatement(consume()))
         return ConsumerAssignmentStatement(token.value, parameters, body)
     }
 
@@ -112,9 +116,6 @@ class Parser {
     }
 
     private fun consume(): Token {
-        if (isAtEnd()) {
-//            throw UnexpectedEndOfInputException()
-        }
         return tokens[current++]
     }
 
@@ -146,8 +147,10 @@ class Parser {
         return tokenTypes.any { it == tokens[current - 1].type }
     }
 
-    private fun parseReturnStatement(token: Token): Statement {
-        val expression = parseLogicalExpression(token)
+    private fun parseReturnStatement(token: Token?): Statement {
+        val expression =
+            if (token == null) null
+            else parseLogicalExpression(token)
         return ReturnStatement(expression)
     }
 
@@ -226,6 +229,7 @@ class Parser {
                 val value = token.value
                 PrimaryExpression(value, fromTokenTypeToPrimaryType(token.type))
             }
+
             else -> throw UnexpectedTokenException(
                 arrayOf(
                     TokenType.NUMBER,

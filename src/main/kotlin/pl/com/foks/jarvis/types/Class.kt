@@ -19,7 +19,7 @@ class Class(environment: Environment, parameters: List<String>, statements: List
     }
 
     override fun consume(arguments: List<Any?>): Any {
-        val clazz = Class(this.environment.copy(true),
+        val clazz = Class(Environment(this.environment.getParent()),
             this.parameters, this.statements)
         for (i in parameters.indices) {
             clazz.environment.assign(parameters[i], arguments[i])
@@ -29,6 +29,6 @@ class Class(environment: Environment, parameters: List<String>, statements: List
     }
 
     override fun toString(): String {
-        return "Class(parameters=$parameters)"
+        return "Class(parameters=$parameters, environment=$environment)"
     }
 }

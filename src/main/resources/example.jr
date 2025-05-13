@@ -1,5 +1,12 @@
-class => (a)
-(a) => print
-return self
+clazz => (a)
+    setA => (_a)
+        a = _a
+    return
+return class
 
-class2 = (2) => class
+(16) => clazz.setA
+
+object = (0) => clazz
+
+(15) => object.setA
+(object.a) => print

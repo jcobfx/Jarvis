@@ -4,6 +4,7 @@ import pl.com.foks.jarvis.interpreter.Interpreter
 import pl.com.foks.jarvis.scanners.Lexer
 import pl.com.foks.jarvis.scanners.Parser
 import pl.com.foks.jarvis.types.Tuple
+import kotlin.system.exitProcess
 
 class Jarvis {
     private val sourceCode: String
@@ -29,7 +30,11 @@ class Jarvis {
     }
 }
 
-fun main() {
-    val jarvis = Jarvis.init("example.jr")
-    println(jarvis.start())
+fun main(args: Array<String>) {
+    val jarvis = if (args.isNotEmpty()) {
+        Jarvis.init(args[0])
+    } else {
+        Jarvis.init("example.jr")
+    }
+    exitProcess(if (jarvis.start().isEmpty()) 0 else 1)
 }

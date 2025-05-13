@@ -7,7 +7,7 @@ import pl.com.foks.jarvis.exceptions.UnterminatedStringLiteralException
 class Lexer {
     private val keywords = mapOf(
         "return" to TokenType.RETURN,
-        "self" to TokenType.SELF,
+        "class" to TokenType.CLASS,
     )
 
     private var tokens = mutableListOf<Token>()
@@ -199,7 +199,7 @@ enum class TokenType {
     FEED,
     COMMA, DOT,
 
-    RETURN, SELF,
+    RETURN, CLASS,
 
     EOL, EOF
 }
