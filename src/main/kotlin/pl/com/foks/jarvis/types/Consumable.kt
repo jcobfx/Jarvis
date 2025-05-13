@@ -1,27 +1,25 @@
-package pl.com.foks.jarvis.interpreter
+package pl.com.foks.jarvis.types
 
+import pl.com.foks.jarvis.interpreter.Environment
+import pl.com.foks.jarvis.interpreter.Interpreter
 import pl.com.foks.jarvis.models.Statement
-import pl.com.foks.jarvis.util.Tuple
 
 fun interface Consumable {
-    fun consume(arguments: List<Any?>): Tuple
+    fun consume(arguments: List<Any?>): Any
 }
 
-class Consumer : Consumable {
-    private val environment: Environment
-    private val parameters: List<String>
-    private val statements: List<Statement>
+open class Consumer : Consumable {
+    protected val environment: Environment
+    protected val parameters: List<String>
+    protected val statements: List<Statement>
 
     constructor(environment: Environment, parameters: List<String>, statements: List<Statement>) {
         this.environment = environment
-        for (parameter in parameters) {
-            this.environment.assign(parameter, null)
-        }
         this.parameters = parameters
         this.statements = statements
     }
 
-    override fun consume(arguments: List<Any?>): Tuple {
+    override fun consume(arguments: List<Any?>): Any {
         if (arguments.size != parameters.size) {
             throw IllegalArgumentException("Invalid number of arguments: expected ${parameters.size}, got ${arguments.size}")
         }
@@ -29,5 +27,9 @@ class Consumer : Consumable {
             environment.assign(parameters[i], arguments[i])
         }
         return Interpreter(environment).interpret(statements)
+    }
+
+    override fun toString(): String {
+        return "Consumer(parameters=$parameters)"
     }
 }

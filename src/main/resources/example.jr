@@ -1,8 +1,5 @@
-fun => (a b)
-a = b + 6
-return (a + b, a)
+class => (a)
+(a) => print
+return self
 
-x = (1 + 2 3) => fun
-y = (1 + 2 3)
-z = "hello"
-(x y z) => print
+class2 = (2) => class

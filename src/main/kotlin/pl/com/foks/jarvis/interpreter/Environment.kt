@@ -1,9 +1,32 @@
 package pl.com.foks.jarvis.interpreter
 
-import pl.com.foks.jarvis.util.Tuple
+import pl.com.foks.jarvis.types.Consumable
+import pl.com.foks.jarvis.types.Tuple
 
-class Environment(val parent: Environment?, val mutable: Boolean = true) {
+class Environment {
+    private val parent: Environment?
+    private var mutable: Boolean
     private val variables: MutableMap<String, Any?> = mutableMapOf()
+
+    constructor(parent: Environment?, mutable: Boolean = true, defaults: Map<String, Any?> = emptyMap()) {
+        this.parent = parent
+        this.mutable = mutable
+        variables.putAll(defaults)
+    }
+
+    internal fun setMutable(mutable: Boolean) {
+        this.mutable = mutable
+    }
+
+    fun isMutable(): Boolean {
+        return mutable
+    }
+
+    fun copy(mutable: Boolean): Environment {
+        val newEnv = Environment(parent, mutable)
+        newEnv.variables.putAll(variables)
+        return newEnv
+    }
 
     fun get(name: String): Any? {
         return if (global.variables.containsKey(name)) {

@@ -4,6 +4,16 @@ abstract class Statement {
     abstract fun <T> accept(visitor: StatementVisitor<T>): T
 }
 
+class EmptyStatement : Statement() {
+    override fun <T> accept(visitor: StatementVisitor<T>): T {
+        return visitor.visitEmptyStatement(this)
+    }
+
+    override fun toString(): String {
+        return "EmptyStatement()"
+    }
+}
+
 class ExpressionStatement(val expression: Expression) : Statement() {
     override fun <T> accept(visitor: StatementVisitor<T>): T {
         return visitor.visitExpressionStatement(this)
@@ -11,6 +21,16 @@ class ExpressionStatement(val expression: Expression) : Statement() {
 
     override fun toString(): String {
         return "ExpressionStatement(expression=$expression)"
+    }
+}
+
+class ClassAssignmentStatement(val identifier: String, val parameters: List<String>, val statements: List<Statement>) : Statement() {
+    override fun <T> accept(visitor: StatementVisitor<T>): T {
+        return visitor.visitClassAssignmentStatement(this)
+    }
+
+    override fun toString(): String {
+        return "ClassAssignmentStatement(identifier='$identifier', statements=$statements)"
     }
 }
 
@@ -45,7 +65,9 @@ class ReturnStatement(val expression: Expression?) : Statement() {
 }
 
 interface StatementVisitor<T> {
+    fun visitEmptyStatement(statement: EmptyStatement): T
     fun visitExpressionStatement(statement: ExpressionStatement): T
+    fun visitClassAssignmentStatement(statement: ClassAssignmentStatement): T
     fun visitConsumerAssignmentStatement(statement: ConsumerAssignmentStatement): T
     fun visitAssignmentStatement(statement: AssignmentStatement): T
     fun visitReturnStatement(statement: ReturnStatement): T

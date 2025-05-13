@@ -1,4 +1,4 @@
-package pl.com.foks.jarvis.util
+package pl.com.foks.jarvis.types
 
 class Tuple(vararg val elements: Any?) {
     override fun toString(): String {

@@ -46,13 +46,23 @@ class TupleExpression(val elements: List<Expression>) : Expression() {
     }
 }
 
-class FeedExpression(val food: List<Expression>, val consumer: String) : Expression() {
+class FeedExpression(val food: List<Expression>, val consumer: Expression) : Expression() {
     override fun <T> accept(visitor: ExpressionVisitor<T>): T {
         return visitor.visitFeedExpression(this)
     }
 
     override fun toString(): String {
         return "FeedExpression(food=$food, consumer='$consumer')"
+    }
+}
+
+class GetExpression(val classIdentifier: String, val property: String) : Expression() {
+    override fun <T> accept(visitor: ExpressionVisitor<T>): T {
+        return visitor.visitGetExpression(this)
+    }
+
+    override fun toString(): String {
+        return "GetExpression(classIdentifier='$classIdentifier', property='$property')"
     }
 }
 
@@ -72,6 +82,7 @@ interface ExpressionVisitor<T> {
     fun visitUnaryExpression(expression: UnaryExpression): T
     fun visitTupleExpression(expression: TupleExpression): T
     fun visitFeedExpression(expression: FeedExpression): T
+    fun visitGetExpression(expression: GetExpression): T
     fun visitPrimaryExpression(expression: PrimaryExpression): T
 }
 

@@ -3,7 +3,7 @@ package pl.com.foks.jarvis
 import pl.com.foks.jarvis.interpreter.Interpreter
 import pl.com.foks.jarvis.scanners.Lexer
 import pl.com.foks.jarvis.scanners.Parser
-import pl.com.foks.jarvis.util.Tuple
+import pl.com.foks.jarvis.types.Tuple
 
 class Jarvis {
     private val sourceCode: String

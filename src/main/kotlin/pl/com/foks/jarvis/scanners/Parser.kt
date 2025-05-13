@@ -4,10 +4,13 @@ import pl.com.foks.jarvis.exceptions.UnexpectedEndOfInputException
 import pl.com.foks.jarvis.exceptions.UnexpectedTokenException
 import pl.com.foks.jarvis.models.AssignmentStatement
 import pl.com.foks.jarvis.models.BinaryExpression
+import pl.com.foks.jarvis.models.ClassAssignmentStatement
 import pl.com.foks.jarvis.models.Expression
 import pl.com.foks.jarvis.models.ExpressionStatement
 import pl.com.foks.jarvis.models.FeedExpression
 import pl.com.foks.jarvis.models.ConsumerAssignmentStatement
+import pl.com.foks.jarvis.models.EmptyStatement
+import pl.com.foks.jarvis.models.GetExpression
 import pl.com.foks.jarvis.models.LogicalExpression
 import pl.com.foks.jarvis.models.PrimaryExpression
 import pl.com.foks.jarvis.models.PrimaryType
@@ -31,6 +34,7 @@ class Parser {
         while (isAtEnd().not()) {
             statements.add(parseStatement())
         }
+        statements.removeIf { it is EmptyStatement }
         return statements
     }
 
@@ -38,14 +42,14 @@ class Parser {
         val token = consume()
         val statement = when (token.type) {
             TokenType.EOF -> throw UnexpectedEndOfInputException()
-            TokenType.EOL -> return parseStatement()
+            TokenType.EOL -> return EmptyStatement()
             TokenType.IDENTIFIER -> {
                 if (peek().type == TokenType.EQUALS) {
                     consume()
                     parseAssignmentStatement(token)
                 } else if (check(TokenType.FEED)) {
                     consume()
-                    parseFunctionAssignmentStatement(token)
+                    parseConsumerAssignmentStatement(token)
                 } else {
                     parseExpressionStatement(token)
                 }
@@ -69,7 +73,7 @@ class Parser {
         return AssignmentStatement(token.value, expression)
     }
 
-    private fun parseFunctionAssignmentStatement(token: Token): Statement {
+    private fun parseConsumerAssignmentStatement(token: Token): Statement {
         val parameters = mutableListOf<String>()
         consumeExpected(TokenType.PARENTHESES_OPEN)
         while (check(TokenType.IDENTIFIER)) {
@@ -80,13 +84,17 @@ class Parser {
         }
         consumeExpected(TokenType.PARENTHESES_CLOSE)
         consumeExpected(TokenType.EOL)
-        val functionBody = mutableListOf<Statement>()
+        val body = mutableListOf<Statement>()
         while (!check(TokenType.RETURN)) {
-            functionBody.add(parseStatement())
+            body.add(parseStatement())
         }
         consumeExpected(TokenType.RETURN)
-        functionBody.add(parseReturnStatement(consume()))
-        return ConsumerAssignmentStatement(token.value, parameters, functionBody)
+        if (check(TokenType.SELF)) {
+            consume()
+            return ClassAssignmentStatement(token.value, parameters, body)
+        }
+        body.add(parseReturnStatement(consume()))
+        return ConsumerAssignmentStatement(token.value, parameters, body)
     }
 
     private fun isAtEnd(): Boolean {
@@ -105,7 +113,7 @@ class Parser {
 
     private fun consume(): Token {
         if (isAtEnd()) {
-            throw UnexpectedEndOfInputException()
+//            throw UnexpectedEndOfInputException()
         }
         return tokens[current++]
     }
@@ -186,7 +194,7 @@ class Parser {
     private fun parseTupleExpression(token: Token): Expression {
         if (checkPrevious(TokenType.PARENTHESES_OPEN)) {
             val elements = mutableListOf<Expression>()
-            while (check(TokenType.NUMBER, TokenType.IDENTIFIER, TokenType.LITERAL)) {
+            while (check(TokenType.NUMBER, TokenType.IDENTIFIER, TokenType.LITERAL, TokenType.PARENTHESES_OPEN)) {
                 elements.add(parseLogicalExpression(consume()))
                 if (check(TokenType.COMMA)) {
                     consume()
@@ -195,10 +203,19 @@ class Parser {
             consumeExpected(TokenType.PARENTHESES_CLOSE)
             if (check(TokenType.FEED)) {
                 consume()
-                val consumer = consumeExpected(TokenType.IDENTIFIER)
-                return FeedExpression(elements, consumer.value)
+                val consumer = parseGetExpression(consumeExpected(TokenType.IDENTIFIER))
+                return FeedExpression(elements, consumer)
             }
             return TupleExpression(elements)
+        }
+        return parseGetExpression(token)
+    }
+
+    private fun parseGetExpression(token: Token): Expression {
+        if (token.type == TokenType.IDENTIFIER && check(TokenType.DOT)) {
+            consume()
+            val property = consumeExpected(TokenType.IDENTIFIER)
+            return GetExpression(token.value, property.value)
         }
         return parsePrimaryExpression(token)
     }

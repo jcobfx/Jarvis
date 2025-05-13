@@ -7,6 +7,7 @@ import pl.com.foks.jarvis.exceptions.UnterminatedStringLiteralException
 class Lexer {
     private val keywords = mapOf(
         "return" to TokenType.RETURN,
+        "self" to TokenType.SELF,
     )
 
     private var tokens = mutableListOf<Token>()
@@ -76,7 +77,19 @@ class Lexer {
                 '&' -> addToken(TokenType.AND)
                 '|' -> addToken(TokenType.OR)
 
+                '#' -> {
+                    while (current < chars.size && peek() != '\n') {
+                        consume()
+                    }
+                    if (current < chars.size) {
+                        addToken(TokenType.EOL)
+                        line++
+                        column = 1
+                    }
+                }
+
                 ',' -> addToken(TokenType.COMMA)
+                '.' -> addToken(TokenType.DOT)
 
                 '\n' -> {
                     addToken(TokenType.EOL)
@@ -183,9 +196,10 @@ enum class TokenType {
 
     IDENTIFIER, LITERAL, NUMBER,
 
-    FEED, COMMA,
+    FEED,
+    COMMA, DOT,
 
-    RETURN,
+    RETURN, SELF,
 
     EOL, EOF
 }
