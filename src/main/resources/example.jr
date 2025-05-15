@@ -1,12 +1,23 @@
-clazz => (a)
-    setA => (_a)
-        a = _a
-    return
+classA => ()
+    getA => ()
+        a => ()
+            ("classA.getA.a") => print
+        return
+    return a
+
+    A => ()
+        x = 5
+    return class
 return class
 
-(16) => clazz.setA
+objectA = () => classA
 
-object = (0) => clazz
+(() => classA.getA) => print
+() => () => classA.getA
 
-(15) => object.setA
-(object.a) => print
+(objectA.A.x) => print
+
+x = (2) => (1 2 3).get
+(x) => print
+
+("hello".val) => print

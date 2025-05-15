@@ -36,6 +36,16 @@ class UnaryExpression(val operator: TokenType, val operand: Expression) : Expres
     }
 }
 
+class GetExpression(val namespace: Expression, val property: Expression) : Expression() {
+    override fun <T> accept(visitor: ExpressionVisitor<T>): T {
+        return visitor.visitGetExpression(this)
+    }
+
+    override fun toString(): String {
+        return "GetExpression(namespace='$namespace', property='$property')"
+    }
+}
+
 class TupleExpression(val elements: List<Expression>) : Expression() {
     override fun <T> accept(visitor: ExpressionVisitor<T>): T {
         return visitor.visitTupleExpression(this)
@@ -46,7 +56,7 @@ class TupleExpression(val elements: List<Expression>) : Expression() {
     }
 }
 
-class FeedExpression(val food: List<Expression>, val consumer: Expression) : Expression() {
+class FeedExpression(val food: Expression, val consumer: Expression) : Expression() {
     override fun <T> accept(visitor: ExpressionVisitor<T>): T {
         return visitor.visitFeedExpression(this)
     }
@@ -56,17 +66,7 @@ class FeedExpression(val food: List<Expression>, val consumer: Expression) : Exp
     }
 }
 
-class GetExpression(val classIdentifier: String, val property: String) : Expression() {
-    override fun <T> accept(visitor: ExpressionVisitor<T>): T {
-        return visitor.visitGetExpression(this)
-    }
-
-    override fun toString(): String {
-        return "GetExpression(classIdentifier='$classIdentifier', property='$property')"
-    }
-}
-
-class PrimaryExpression(val value: String, val type: PrimaryType) : Expression() {
+class PrimaryExpression(val value: String, val type: TokenType) : Expression() {
     override fun <T> accept(visitor: ExpressionVisitor<T>): T {
         return visitor.visitPrimaryExpression(this)
     }
@@ -80,14 +80,8 @@ interface ExpressionVisitor<T> {
     fun visitLogicalExpression(expression: LogicalExpression): T
     fun visitBinaryExpression(expression: BinaryExpression): T
     fun visitUnaryExpression(expression: UnaryExpression): T
+    fun visitGetExpression(expression: GetExpression): T
     fun visitTupleExpression(expression: TupleExpression): T
     fun visitFeedExpression(expression: FeedExpression): T
-    fun visitGetExpression(expression: GetExpression): T
     fun visitPrimaryExpression(expression: PrimaryExpression): T
-}
-
-enum class PrimaryType {
-    IDENTIFIER,
-    LITERAL,
-    NUMBER
 }

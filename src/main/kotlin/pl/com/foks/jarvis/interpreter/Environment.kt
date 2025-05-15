@@ -1,16 +1,17 @@
 package pl.com.foks.jarvis.interpreter
 
+import pl.com.foks.jarvis.config.GlobalEnvironmentConfiguration
 import pl.com.foks.jarvis.exceptions.AssignmentException
 import pl.com.foks.jarvis.exceptions.VariableNotFoundException
-import pl.com.foks.jarvis.types.Consumable
-import pl.com.foks.jarvis.types.Tuple
+import pl.com.foks.jarvis.interpreter.types.JRNone
+import pl.com.foks.jarvis.interpreter.types.JRType
 
 class Environment {
     private val parent: Environment?
     private var mutable: Boolean
-    private val variables: MutableMap<String, Any?> = mutableMapOf()
+    private val variables: MutableMap<String, JRType<*>> = mutableMapOf()
 
-    constructor(parent: Environment?, mutable: Boolean = true, defaults: Map<String, Any?> = emptyMap()) {
+    constructor(parent: Environment?, mutable: Boolean = true, defaults: Map<String, JRType<*>> = emptyMap()) {
         this.parent = parent
         this.mutable = mutable
         variables.putAll(defaults)
@@ -28,20 +29,16 @@ class Environment {
         return mutable
     }
 
-    fun get(name: String): Any? {
-        return if (global.variables.containsKey(name)) {
-            global.variables[name]
+    fun get(name: String): JRType<*> {
+        return if (globals.containsKey(name)) {
+            globals[name] ?: JRNone.NONE
         } else if (variables.containsKey(name)) {
-            variables[name]
-        } else if (parent != null) {
-            parent.get(name)
-        } else {
-            throw VariableNotFoundException("Variable $name not found")
-        }
+            variables[name] ?: JRNone.NONE
+        } else parent?.get(name) ?: throw VariableNotFoundException(name)
     }
 
-    fun assign(name: String, value: Any?) {
-        if (global.variables.containsKey(name)) {
+    fun assign(name: String, value: JRType<*>) {
+        if (globals.containsKey(name)) {
             throw AssignmentException(name, value)
         } else if (mutable && !parentContains(name)) {
             variables[name] = value
@@ -53,7 +50,7 @@ class Environment {
     }
 
     private fun contains(name: String): Boolean {
-        return global.variables.containsKey(name) || variables.containsKey(name) || (parent?.contains(name) ?: false)
+        return globals.containsKey(name) || variables.containsKey(name) || (parent?.contains(name) ?: false)
     }
 
     private fun parentContains(name: String): Boolean {
@@ -65,15 +62,6 @@ class Environment {
     }
 
     companion object {
-        private val global = Environment(null, false)
-
-        init {
-            global.variables["print"] = object : Consumable {
-                override fun consume(arguments: List<Any?>): Any {
-                    println(arguments.joinToString(", ") { it.toString() })
-                    return Tuple()
-                }
-            }
-        }
+        private val globals = GlobalEnvironmentConfiguration.getGlobals()
     }
 }

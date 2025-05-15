@@ -1,37 +1,19 @@
 package pl.com.foks.jarvis.interpreter
 
 import pl.com.foks.jarvis.exceptions.InterpreterException
+import pl.com.foks.jarvis.exceptions.InvalidExpressionException
 import pl.com.foks.jarvis.exceptions.UnknownOperatorException
-import pl.com.foks.jarvis.models.AssignmentStatement
-import pl.com.foks.jarvis.models.BinaryExpression
-import pl.com.foks.jarvis.models.ClassAssignmentStatement
-import pl.com.foks.jarvis.models.ExpressionStatement
-import pl.com.foks.jarvis.models.ExpressionVisitor
-import pl.com.foks.jarvis.models.FeedExpression
-import pl.com.foks.jarvis.models.ConsumerAssignmentStatement
-import pl.com.foks.jarvis.models.EmptyStatement
-import pl.com.foks.jarvis.models.GetExpression
-import pl.com.foks.jarvis.models.LogicalExpression
-import pl.com.foks.jarvis.models.PrimaryExpression
-import pl.com.foks.jarvis.models.PrimaryType
-import pl.com.foks.jarvis.models.ReturnStatement
-import pl.com.foks.jarvis.models.Statement
-import pl.com.foks.jarvis.models.StatementVisitor
-import pl.com.foks.jarvis.models.TupleExpression
-import pl.com.foks.jarvis.models.UnaryExpression
+import pl.com.foks.jarvis.interpreter.types.*
+import pl.com.foks.jarvis.models.*
 import pl.com.foks.jarvis.scanners.TokenType
-import pl.com.foks.jarvis.types.Class
-import pl.com.foks.jarvis.types.Consumable
-import pl.com.foks.jarvis.types.Consumer
-import pl.com.foks.jarvis.types.Tuple
 
-class Interpreter(private val environment: Environment = Environment(null)) : ExpressionVisitor<Any?>,
-    StatementVisitor<Any?> {
-    fun interpret(statements: List<Statement>): Tuple {
+class Interpreter(private val environment: Environment? = Environment(null)) : ExpressionVisitor<JRType<*>>,
+    StatementVisitor<JRType<*>> {
+    fun interpret(statements: List<Statement>): JRType<*> {
         for (statement in statements) {
             try {
                 if (statement is ReturnStatement) {
-                    return statement.accept(this) as Tuple
+                    return statement.accept(this)
                 }
                 statement.accept(this)
             } catch (e: InterpreterException) {
@@ -40,114 +22,127 @@ class Interpreter(private val environment: Environment = Environment(null)) : Ex
                 continue
             }
         }
-        return Tuple()
+        return JRTuple()
     }
 
-    override fun visitLogicalExpression(expression: LogicalExpression): Any? {
+    override fun visitLogicalExpression(expression: LogicalExpression): JRBool {
         val left = expression.left.accept(this)
         val right = expression.right.accept(this)
         return when (expression.operator) {
-            TokenType.AND -> left as Boolean && right as Boolean
-            TokenType.OR -> left as Boolean || right as Boolean
+            TokenType.AND -> left.and(right)
+            TokenType.OR -> left.or(right)
+            TokenType.XOR -> left.xor(right)
             else -> throw UnknownOperatorException(expression.operator)
         }
     }
 
-    override fun visitBinaryExpression(expression: BinaryExpression): Any? {
+    override fun visitBinaryExpression(expression: BinaryExpression): JRType<*> {
         val left = expression.left.accept(this)
         val right = expression.right.accept(this)
         return when (expression.operator) {
-            TokenType.PLUS -> (left as Double) + (right as Double)
-            TokenType.MINUS -> (left as Double) - (right as Double)
-            TokenType.MULTIPLY -> (left as Double) * (right as Double)
-            TokenType.DIVIDE -> (left as Double) / (right as Double)
-            TokenType.EQUALS_EQUALS -> left == right
-            TokenType.NOT_EQUALS -> left != right
-            TokenType.LESS_THAN -> (left as Double) < (right as Double)
-            TokenType.LESS_THAN_EQUALS -> (left as Double) <= (right as Double)
-            TokenType.GREATER_THAN -> (left as Double) > (right as Double)
-            TokenType.GREATER_THAN_EQUALS -> (left as Double) >= (right as Double)
+            TokenType.PLUS -> left.plus(right)
+            TokenType.MINUS -> left.minus(right)
+            TokenType.MULTIPLY -> left.times(right)
+            TokenType.DIVIDE -> left.div(right)
+            TokenType.EQUALS_EQUALS -> if (left == right) JRBool.TRUE else JRBool.FALSE
+            TokenType.NOT_EQUALS -> if (left != right) JRBool.TRUE else JRBool.FALSE
+            TokenType.LESS_THAN -> if (left < right) JRBool.TRUE else JRBool.FALSE
+            TokenType.LESS_THAN_EQUALS -> if (left <= right) JRBool.TRUE else JRBool.FALSE
+            TokenType.GREATER_THAN -> if (left > right) JRBool.TRUE else JRBool.FALSE
+            TokenType.GREATER_THAN_EQUALS -> if (left >= right) JRBool.TRUE else JRBool.FALSE
             else -> throw UnknownOperatorException(expression.operator)
         }
     }
 
-    override fun visitUnaryExpression(expression: UnaryExpression): Any? {
+    override fun visitUnaryExpression(expression: UnaryExpression): JRType<*> {
         val operand = expression.operand.accept(this)
         return when (expression.operator) {
-            TokenType.MINUS -> -(operand as Double)
-            TokenType.NOT -> !(operand as Boolean)
+            TokenType.MINUS -> -operand
+            TokenType.NOT -> !operand
             else -> throw UnknownOperatorException(expression.operator)
         }
     }
 
-    override fun visitTupleExpression(expression: TupleExpression): Tuple {
-        val elements = expression.elements.map { it.accept(this) }
-        return Tuple(elements)
+    override fun visitGetExpression(expression: GetExpression): JRType<*> {
+        return when (expression.property) {
+            is PrimaryExpression -> expression.namespace.accept(this).get(expression.property.value)
+            is GetExpression -> expression.property.accept(
+                Interpreter(expression.namespace.accept(this).environment)
+            )
+
+            else -> throw InvalidExpressionException(expression.property)
+        }
     }
 
-    override fun visitFeedExpression(expression: FeedExpression): Any {
-        val food = expression.food.map { it.accept(this) }
-        val consumer = expression.consumer.accept(this) as Consumable
+    override fun visitTupleExpression(expression: TupleExpression): JRTuple {
+        val elements = expression.elements.map { it.accept(this) }
+        return JRTuple(elements)
+    }
+
+    override fun visitFeedExpression(expression: FeedExpression): JRType<*> {
+        val food = if (expression.food is TupleExpression) {
+            expression.food.elements.map { it.accept(this) }
+        } else {
+            listOf(expression.food.accept(this))
+        }
+        val consumer = expression.consumer.accept(this) as JRConsumable
         return consumer.consume(food)
     }
 
-    override fun visitGetExpression(expression: GetExpression): Any? {
-        return (environment.get(expression.classIdentifier) as Class).get(expression.property)
-    }
-
-    override fun visitPrimaryExpression(expression: PrimaryExpression): Any? {
+    override fun visitPrimaryExpression(expression: PrimaryExpression): JRType<*> {
         return when (expression.type) {
-            PrimaryType.IDENTIFIER -> environment.get(expression.value)
-            PrimaryType.NUMBER -> expression.value.toDouble()
-            PrimaryType.LITERAL -> expression.value
+            TokenType.IDENTIFIER -> environment?.get(expression.value) ?: JRNone.NONE
+            TokenType.NUMBER -> JRNumber(expression.value.toDouble())
+            TokenType.LITERAL -> JRLiteral(expression.value)
+            TokenType.TRUE -> JRBool.TRUE
+            TokenType.FALSE -> JRBool.FALSE
+            else -> throw IllegalArgumentException("Unknown primary type: ${expression.type}")
         }
     }
 
-    override fun visitEmptyStatement(statement: EmptyStatement): Any? {
-        return null
+    override fun visitEmptyStatement(statement: EmptyStatement): JRType<*> {
+        return JRNone.NONE
     }
 
-    override fun visitExpressionStatement(statement: ExpressionStatement): Any? {
+    override fun visitExpressionStatement(statement: ExpressionStatement): JRType<*> {
         statement.expression.accept(this)
-        return null
+        return JRNone.NONE
     }
 
-    override fun visitClassAssignmentStatement(statement: ClassAssignmentStatement): Any? {
-        val defaults = statement.parameters.associateWith { null }
-        val classInstance = Class(
+    override fun visitClassAssignmentStatement(statement: ClassAssignmentStatement): JRType<*> {
+        val defaults = statement.parameters.associateWith { JRNone.NONE }
+        val clazz = JRClass(
             Environment(null, false, defaults),
             statement.parameters,
             statement.statements
         )
-        classInstance.init()
-        environment.assign(statement.identifier, classInstance)
-        return null
+        clazz.init()
+        environment?.assign(statement.identifier, clazz)
+        return JRNone.NONE
     }
 
-    override fun visitConsumerAssignmentStatement(statement: ConsumerAssignmentStatement): Any? {
-        val defaults = statement.parameters.associateWith { null }
-        val consumer = Consumer(
+    override fun visitConsumerAssignmentStatement(statement: ConsumerAssignmentStatement): JRType<*> {
+        val defaults = statement.parameters.associateWith { JRNone.NONE }
+        val consumer = JRConsumer(
             Environment(environment, defaults = defaults),
             statement.parameters,
             statement.statements
         )
-        environment.assign(statement.identifier, consumer)
-        return null
+        environment?.assign(statement.identifier, consumer)
+        return JRNone.NONE
     }
 
-    override fun visitAssignmentStatement(statement: AssignmentStatement): Any? {
+    override fun visitAssignmentStatement(statement: AssignmentStatement): JRType<*> {
         val value = statement.expression.accept(this)
-        environment.assign(statement.identifier, value)
-        return null
+        environment?.assign(statement.identifier, value)
+        return JRNone.NONE
     }
 
-    override fun visitReturnStatement(statement: ReturnStatement): Tuple {
+    override fun visitReturnStatement(statement: ReturnStatement): JRType<*> {
         val value = statement.expression?.accept(this)
-        if (value is Tuple) {
-            return value
-        } else if (value == null) {
-            return Tuple()
+        if (value == null) {
+            return JRNone.NONE
         }
-        return Tuple(value)
+        return value
     }
 }

@@ -6,6 +6,8 @@ import pl.com.foks.jarvis.exceptions.UnterminatedStringLiteralException
 
 class Lexer {
     private val keywords = mapOf(
+        "true" to TokenType.TRUE,
+        "false" to TokenType.FALSE,
         "return" to TokenType.RETURN,
         "class" to TokenType.CLASS,
     )
@@ -76,15 +78,11 @@ class Lexer {
 
                 '&' -> addToken(TokenType.AND)
                 '|' -> addToken(TokenType.OR)
+                '^' -> addToken(TokenType.XOR)
 
                 '#' -> {
                     while (current < chars.size && peek() != '\n') {
                         consume()
-                    }
-                    if (current < chars.size) {
-                        addToken(TokenType.EOL)
-                        line++
-                        column = 1
                     }
                 }
 
@@ -185,7 +183,7 @@ class Lexer {
 enum class TokenType {
     EQUALS,
     PLUS, MINUS, MULTIPLY, DIVIDE,
-    NOT, AND, OR,
+    NOT, AND, OR, XOR,
 
     EQUALS_EQUALS, NOT_EQUALS, LESS_THAN, GREATER_THAN,
     LESS_THAN_EQUALS, GREATER_THAN_EQUALS,
@@ -195,6 +193,7 @@ enum class TokenType {
     BRACKETS_OPEN, BRACKETS_CLOSE,
 
     IDENTIFIER, LITERAL, NUMBER,
+    TRUE, FALSE,
 
     FEED,
     COMMA, DOT,
