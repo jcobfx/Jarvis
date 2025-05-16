@@ -34,11 +34,23 @@ class JRTuple : JRType<JRTuple> {
         return elements.isEmpty()
     }
 
+    fun size(): Int {
+        return elements.size
+    }
+
     fun get(index: Int): JRType<*> {
         return if (index in elements.indices) {
             elements[index]
         } else {
             throw IndexOutOfBoundsException("Index $index out of bounds for length ${elements.size}")
+        }
+    }
+
+    fun get(): JRType<*> {
+        return if (elements.size == 1) {
+            elements[0]
+        } else {
+            throw IllegalOperationException("get", this::class.simpleName ?: "JRTuple")
         }
     }
 

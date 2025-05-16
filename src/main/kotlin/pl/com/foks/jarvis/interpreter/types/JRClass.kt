@@ -1,5 +1,6 @@
 package pl.com.foks.jarvis.interpreter.types
 
+import pl.com.foks.jarvis.exceptions.InvalidArgumentCountException
 import pl.com.foks.jarvis.interpreter.Environment
 import pl.com.foks.jarvis.interpreter.Interpreter
 import pl.com.foks.jarvis.models.Statement
@@ -15,6 +16,9 @@ class JRClass(environment: Environment, parameters: List<String>, statements: Li
     }
 
     override fun consume(arguments: List<JRType<*>>): JRType<*> {
+        if (arguments.size != parameters.size) {
+            throw InvalidArgumentCountException(parameters.size,arguments.size)
+        }
         val clazz = JRClass(Environment(this.environment?.getParent()),
             this.parameters, this.statements)
         for (i in parameters.indices) {

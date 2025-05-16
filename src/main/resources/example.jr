@@ -1,4 +1,4 @@
-classA => ()
+classA => (a)
     getA => ()
         a => ()
             ("classA.getA.a") => print

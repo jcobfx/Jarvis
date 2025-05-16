@@ -85,7 +85,10 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
         } else {
             listOf(expression.food.accept(this))
         }
-        val consumer = expression.consumer.accept(this) as JRConsumable
+        val consumer = expression.consumer.accept(this)
+        if (consumer !is JRConsumer) {
+            throw InvalidExpressionException(expression.consumer)
+        }
         return consumer.consume(food)
     }
 

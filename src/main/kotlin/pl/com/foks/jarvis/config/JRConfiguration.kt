@@ -8,7 +8,7 @@ import pl.com.foks.jarvis.interpreter.types.JRType
 
 class GlobalEnvironmentConfiguration {
     companion object {
-        fun getGlobals(): Map<String, JRType<*>?> {
+        fun getGlobals(): Map<String, JRType<*>> {
             return mapOf(
                 "print" to object : JRConsumer(Environment(null, false), emptyList(), emptyList()) {
                     override fun consume(arguments: List<JRType<*>>): JRType<*> {
