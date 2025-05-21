@@ -87,3 +87,13 @@ class InvalidExpressionException(
         return "InvalidExpressionException(expression=$expression)"
     }
 }
+
+class IllegalCastException(
+    val from: String,
+    val to: String,
+    val value: Any?
+) : InterpreterException("Illegal cast from '$from' to '$to' with value '$value'") {
+    override fun toString(): String {
+        return "IllegalCastException(from='$from', to='$to')"
+    }
+}

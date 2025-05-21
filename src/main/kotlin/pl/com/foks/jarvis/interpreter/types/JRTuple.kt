@@ -16,7 +16,7 @@ class JRTuple : JRType<JRTuple> {
                             return if (index in elements.indices) {
                                 elements[index]
                             } else {
-                                JRTuple()
+                                JRNone.NONE
                             }
                         }
                         throw InvalidArgumentsException("get", listOf("index"), arguments.map { it.toString() })

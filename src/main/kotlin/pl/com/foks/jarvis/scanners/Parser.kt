@@ -220,7 +220,7 @@ class Parser {
 
     private fun parsePrimaryExpression(token: Token): Expression {
         return when (token.type) {
-            TokenType.NUMBER, TokenType.IDENTIFIER, TokenType.LITERAL, TokenType.TRUE, TokenType.FALSE -> {
+            TokenType.NUMBER, TokenType.IDENTIFIER, TokenType.LITERAL, TokenType.TRUE, TokenType.FALSE, TokenType.NONE -> {
                 val value = token.value
                 PrimaryExpression(value, token.type)
             }
@@ -232,6 +232,7 @@ class Parser {
                     TokenType.LITERAL,
                     TokenType.TRUE,
                     TokenType.FALSE,
+                    TokenType.NONE,
                 ),
                 token
             )

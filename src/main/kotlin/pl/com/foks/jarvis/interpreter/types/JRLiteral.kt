@@ -1,8 +1,35 @@
 package pl.com.foks.jarvis.interpreter.types
 
+import pl.com.foks.jarvis.exceptions.IllegalCastException
 import pl.com.foks.jarvis.exceptions.IllegalOperationException
+import pl.com.foks.jarvis.exceptions.InvalidArgumentsException
+import pl.com.foks.jarvis.interpreter.Environment
 
-class JRLiteral(val value: String) : JRType<JRLiteral>(null) {
+class JRLiteral : JRType<JRLiteral> {
+    val value: String
+
+    constructor(value: String) :
+            super(Environment(null).apply {
+                val toNumber = object : JRConsumer(this, emptyList(), emptyList()) {
+                    override fun consume(arguments: List<JRType<*>>): JRType<*> {
+                        if (arguments.isEmpty()) {
+                            return JRNumber(
+                                value.toDoubleOrNull() ?: throw IllegalCastException(
+                                    "String",
+                                    "Number",
+                                    value
+                                )
+                            )
+                        }
+                        throw InvalidArgumentsException("toNumber", emptyList(), arguments.map { it.toString() })
+                    }
+                }
+                assign("toNumber", toNumber)
+                setMutable(false)
+            }) {
+        this.value = value
+    }
+
     override fun plus(other: JRType<*>): JRLiteral {
         if (other is JRLiteral) {
             return JRLiteral(this.value + other.value)

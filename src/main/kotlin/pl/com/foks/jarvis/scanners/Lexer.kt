@@ -10,6 +10,7 @@ class Lexer {
         "false" to TokenType.FALSE,
         "return" to TokenType.RETURN,
         "class" to TokenType.CLASS,
+        "none" to TokenType.NONE,
     )
 
     private var tokens = mutableListOf<Token>()
@@ -194,6 +195,7 @@ enum class TokenType {
 
     IDENTIFIER, LITERAL, NUMBER,
     TRUE, FALSE,
+    NONE,
 
     FEED,
     COMMA, DOT,

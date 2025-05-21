@@ -99,6 +99,7 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
             TokenType.LITERAL -> JRLiteral(expression.value)
             TokenType.TRUE -> JRBool.TRUE
             TokenType.FALSE -> JRBool.FALSE
+            TokenType.NONE -> JRNone.NONE
             else -> throw IllegalArgumentException("Unknown primary type: ${expression.type}")
         }
     }

@@ -4,6 +4,7 @@ import pl.com.foks.jarvis.interpreter.Interpreter
 import pl.com.foks.jarvis.scanners.Lexer
 import pl.com.foks.jarvis.scanners.Parser
 import pl.com.foks.jarvis.interpreter.types.JRType
+import java.io.File
 import kotlin.system.exitProcess
 
 class Jarvis {
@@ -33,31 +34,35 @@ class Jarvis {
 
     companion object {
         fun init(filepath: String, debug: Boolean): Jarvis {
-            val sourceCode = Jarvis::class.java.classLoader.getResourceAsStream(filepath)
-                ?.bufferedReader()
-                ?.use { it.readText() }
-                ?: throw IllegalArgumentException("File not found: $filepath")
+            val file = File(filepath)
+            if (!file.exists()) {
+                println("File not found: $filepath")
+                exitProcess(1)
+            }
+            val sourceCode = file
+                .bufferedReader()
+                .use { it.readText() }
             return Jarvis(sourceCode, debug)
         }
+
+        @JvmStatic fun main(args: Array<String>) {
+            if (args.isEmpty()) {
+                println("Usage: jarvis <source_file> [-options]")
+                exitProcess(0)
+            }
+
+            if (args[0] == "-h" || args[0] == "--help") {
+                println("Usage: jarvis <source_file> [-options]")
+                println("Options:")
+                println("  -h, --help    Show this help message")
+                println("  -d, --debug   Enable debug mode")
+                exitProcess(0)
+            }
+
+            val debug = args.contains("-d") || args.contains("--debug")
+
+            val jarvis = init(args[0], debug)
+            exitProcess(if (jarvis.start().toBool().value()) 0 else 1)
+        }
     }
-}
-
-fun main(vararg args: String) {
-    if (args.isEmpty()) {
-        println("Usage: jarvis <source_file> [-options]")
-        exitProcess(1)
-    }
-
-    if (args[0] == "-h" || args[0] == "--help") {
-        println("Usage: jarvis <source_file> [-options]")
-        println("Options:")
-        println("  -h, --help    Show this help message")
-        println("  -d, --debug   Enable debug mode")
-        exitProcess(0)
-    }
-
-    val debug = args.contains("-d") || args.contains("--debug")
-
-    val jarvis = Jarvis.init(args[0], debug)
-    exitProcess(if (jarvis.start().toBool().value()) 0 else 1)
 }

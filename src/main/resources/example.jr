@@ -10,7 +10,7 @@ classA => (a)
     return class
 return class
 
-objectA = () => classA
+objectA = ("dupa") => classA
 
 (() => classA.getA) => print
 () => () => classA.getA
@@ -20,4 +20,6 @@ objectA = () => classA
 x = (2) => (1 2 3).get
 (x) => print
 
-("hello".val) => print
+(() => "57".toNumber) => print
+
+(classA.a) => print

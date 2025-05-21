@@ -42,7 +42,7 @@ class Environment {
             throw AssignmentException(name, value)
         } else if (mutable && !parentContains(name)) {
             variables[name] = value
-        } else if (parent != null && parent.contains(name)) {
+        } else if (parent != null) {
             parent.assign(name, value)
         } else {
             throw AssignmentException(name, value)
