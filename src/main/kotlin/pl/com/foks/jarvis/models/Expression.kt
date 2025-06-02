@@ -12,7 +12,7 @@ class LogicalExpression(val left: Expression, val operator: TokenType, val right
     }
 
     override fun toString(): String {
-        return "LogicalExpression(left=$left, operator='$operator', right=$right)"
+        return "$left $operator $right"
     }
 }
 
@@ -22,7 +22,7 @@ class BinaryExpression(val left: Expression, val operator: TokenType, val right:
     }
 
     override fun toString(): String {
-        return "BinaryExpression(left=$left, operator='$operator', right=$right)"
+        return "$left $operator $right"
     }
 }
 
@@ -32,7 +32,7 @@ class UnaryExpression(val operator: TokenType, val operand: Expression) : Expres
     }
 
     override fun toString(): String {
-        return "UnaryExpression(operator='$operator', operand=$operand)"
+        return "$operator$operand"
     }
 }
 
@@ -42,7 +42,7 @@ class GetExpression(val namespace: Expression, val property: Expression) : Expre
     }
 
     override fun toString(): String {
-        return "GetExpression(namespace='$namespace', property='$property')"
+        return "$namespace.$property"
     }
 }
 
@@ -52,7 +52,7 @@ class TupleExpression(val elements: List<Expression>) : Expression() {
     }
 
     override fun toString(): String {
-        return "TupleExpression(elements=$elements)"
+        return "(${elements.joinToString(", ")})"
     }
 }
 
@@ -62,7 +62,7 @@ class FeedExpression(val food: Expression, val consumer: Expression) : Expressio
     }
 
     override fun toString(): String {
-        return "FeedExpression(food=$food, consumer='$consumer')"
+        return "$food => $consumer"
     }
 }
 
@@ -72,7 +72,7 @@ class PrimaryExpression(val value: String, val type: TokenType) : Expression() {
     }
 
     override fun toString(): String {
-        return "PrimaryExpression(value='$value', type=$type)"
+        return value
     }
 }
 

@@ -27,10 +27,11 @@ class VariableNotFoundException(
 
 class AssignmentException(
     val variableName: String,
-    val value: Any?
-) : InterpreterException("Cannot assign to variable '$variableName' with value '$value'") {
+    val value: Any?,
+    val reason: String = "Cannot assign value to variable"
+) : InterpreterException("Cannot assign to variable '$variableName' with value '$value'\nReason: $reason") {
     override fun toString(): String {
-        return "AssignmentException(variableName='$variableName', value='$value')"
+        return "AssignmentException(variableName='$variableName', value='$value, reason='$reason')"
     }
 }
 
@@ -53,30 +54,20 @@ class InvalidArgumentCountException(
     }
 }
 
-class InconvertibleTypeException(
-    val from: String,
-    val to: String
-) : InterpreterException("Cannot convert from '$from' to '$to'") {
+class OutOfBoundsException(
+    val index: Int,
+    val size: Int
+) : InterpreterException("Index out of bounds: index $index, size $size") {
     override fun toString(): String {
-        return "InconvertibleTypeException(from='$from', to='$to')"
+        return "OutOfBoundsException(index=$index, size=$size)"
     }
 }
 
 class IllegalOperationException(
-    val operation: String,
-    val type: String
-) : InterpreterException("Illegal operation '$operation' on type '$type'") {
+    val operation: TokenType,
+) : InterpreterException("Illegal operation '$operation'") {
     override fun toString(): String {
-        return "IllegalOperationException(operation='$operation', type='$type')"
-    }
-}
-
-class NullValueException(
-    val variableName: String,
-    val expression: Expression
-) : InterpreterException("Variable '$variableName' is null in expression $expression") {
-    override fun toString(): String {
-        return "NullValueException(variableName='$variableName', expression=$expression)"
+        return "IllegalOperationException(operation='$operation')"
     }
 }
 

@@ -1,13 +1,14 @@
 classA => (a)
     getA => ()
-        a => ()
+        this.a => ()
             ("classA.getA.a") => print
         return
     return a
 
-    A => ()
-        x = 5
+    A => (x)
     return class
+
+    oA = (5) => A
 return class
 
 objectA = ("dupa") => classA
@@ -22,4 +23,4 @@ x = (2) => (1 2 3).get
 
 (() => "57".toNumber) => print
 
-(classA.a) => print
+(classA.oA.x) => print

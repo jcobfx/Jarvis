@@ -2,29 +2,32 @@ package pl.com.foks.jarvis.interpreter.types
 
 import pl.com.foks.jarvis.exceptions.IllegalOperationException
 import pl.com.foks.jarvis.exceptions.InvalidArgumentsException
+import pl.com.foks.jarvis.exceptions.OutOfBoundsException
 import pl.com.foks.jarvis.interpreter.Environment
+import pl.com.foks.jarvis.scanners.TokenType
 
-class JRTuple : JRType<JRTuple> {
+class JRTuple : JRType<JRTuple>, JRComparable {
+    val environment: Environment
     val elements: Array<JRType<*>>
 
-    constructor(vararg elements: JRType<*>) :
-            super(Environment(null).apply {
-                val get = object : JRConsumer(this, listOf("index"), emptyList()) {
-                    override fun consume(arguments: List<JRType<*>>): JRType<*> {
-                        if (arguments[0] is JRNumber) {
-                            val index = (arguments[0] as JRNumber).value.toInt()
-                            return if (index in elements.indices) {
-                                elements[index]
-                            } else {
-                                JRNone.NONE
-                            }
+    constructor(vararg elements: JRType<*>) {
+        environment = Environment(null).apply {
+            val get = object : JRConsumer(this, listOf("index"), emptyList()) {
+                override fun consume(arguments: List<JRType<*>>): JRType<*> {
+                    if (arguments[0] is JRNumber) {
+                        val index = (arguments[0] as JRNumber).value.toInt()
+                        return if (index in elements.indices) {
+                            elements[index]
+                        } else {
+                            JRNone.NONE
                         }
-                        throw InvalidArgumentsException("get", listOf("index"), arguments.map { it.toString() })
                     }
+                    throw InvalidArgumentsException("get", listOf("index"), arguments.map { it.toString() })
                 }
-                assign("get", get)
-                setMutable(false)
-            }) {
+            }
+            assign("get", get)
+            setMutable(false)
+        }
         this.elements = elements as Array<JRType<*>>
     }
 
@@ -42,7 +45,7 @@ class JRTuple : JRType<JRTuple> {
         return if (index in elements.indices) {
             elements[index]
         } else {
-            throw IndexOutOfBoundsException("Index $index out of bounds for length ${elements.size}")
+            throw OutOfBoundsException(index, elements.size)
         }
     }
 
@@ -50,41 +53,13 @@ class JRTuple : JRType<JRTuple> {
         return if (elements.size == 1) {
             elements[0]
         } else {
-            throw IllegalOperationException("get", this::class.simpleName ?: "JRTuple")
+            throw OutOfBoundsException(1, elements.size)
         }
     }
 
-    override fun plus(other: JRType<*>): JRTuple {
-        throw IllegalOperationException("plus", this::class.simpleName ?: "JRTuple")
-    }
-
-    override fun minus(other: JRType<*>): JRTuple {
-        throw IllegalOperationException("minus", this::class.simpleName ?: "JRTuple")
-    }
-
-    override fun times(other: JRType<*>): JRTuple {
-        throw IllegalOperationException("times", this::class.simpleName ?: "JRTuple")
-    }
-
-    override fun div(other: JRType<*>): JRTuple {
-        throw IllegalOperationException("div", this::class.simpleName ?: "JRTuple")
-    }
-
-    override fun rem(other: JRType<*>): JRTuple {
-        throw IllegalOperationException("rem", this::class.simpleName ?: "JRTuple")
-    }
-
-    override fun unaryMinus(): JRTuple {
-        throw IllegalOperationException("unaryMinus", this::class.simpleName ?: "JRTuple")
-    }
-
-    override fun not(): JRBool {
-        return this.toBool().not()
-    }
-
-    override fun compareTo(other: JRType<*>): Int {
+    override fun compareTo(other: JRComparable): Int {
         if (other !is JRTuple) {
-            throw IllegalOperationException("compareTo", this::class.simpleName ?: "JRTuple")
+            throw IllegalOperationException(TokenType.EQUALS_EQUALS)
         }
 
         if (this.isEmpty() && other.isEmpty()) return 0
@@ -99,22 +74,6 @@ class JRTuple : JRType<JRTuple> {
             thisSize > otherSize -> 1
             else -> 0
         }
-    }
-
-    override fun or(other: JRType<*>): JRBool {
-        return this.toBool().or(other.toBool())
-    }
-
-    override fun and(other: JRType<*>): JRBool {
-        return this.toBool().and(other.toBool())
-    }
-
-    override fun xor(other: JRType<*>): JRBool {
-        return this.toBool().xor(other.toBool())
-    }
-
-    override fun toBool(): JRBool {
-        return if (!isEmpty() || elements.any { it == JRNone.NONE }) JRBool.FALSE else JRBool.TRUE
     }
 
     override fun toString(): String {
@@ -134,5 +93,13 @@ class JRTuple : JRType<JRTuple> {
 
     override fun hashCode(): Int {
         return elements.contentHashCode()
+    }
+
+    override fun get(name: String): JRType<*> {
+        return environment.get(name)
+    }
+
+    override fun env(): Environment {
+        return environment
     }
 }

@@ -1,64 +1,39 @@
 package pl.com.foks.jarvis.interpreter.types
 
-import pl.com.foks.jarvis.exceptions.IllegalOperationException
+import pl.com.foks.jarvis.interpreter.Environment
 
-class JRBool : JRType<JRBool> {
+class JRBool : JRType<JRBool>, JRComparable, JRLogic<JRBool> {
     val value: Boolean
 
-    private constructor(value: Boolean) : super(null) {
+    private constructor(value: Boolean) {
         this.value = value
     }
 
-    fun value(): Boolean {
+    override fun value(): Boolean {
         return value
-    }
-
-    override fun plus(other: JRType<*>): JRBool {
-        throw IllegalOperationException("plus", this::class.simpleName ?: "JRBool")
-    }
-
-    override fun minus(other: JRType<*>): JRBool {
-        throw IllegalOperationException("minus", this::class.simpleName ?: "JRBool")
-    }
-
-    override fun times(other: JRType<*>): JRBool {
-        throw IllegalOperationException("times", this::class.simpleName ?: "JRBool")
-    }
-
-    override fun div(other: JRType<*>): JRBool {
-        throw IllegalOperationException("div", this::class.simpleName ?: "JRBool")
-    }
-
-    override fun rem(other: JRType<*>): JRBool {
-        throw IllegalOperationException("rem", this::class.simpleName ?: "JRBool")
-    }
-
-    override fun unaryMinus(): JRBool {
-        throw IllegalOperationException("unaryMinus", this::class.simpleName ?: "JRBool")
     }
 
     override fun not(): JRBool {
         return if (this.value) FALSE else TRUE
     }
 
-    override fun compareTo(other: JRType<*>): Int {
-        return value.compareTo(other.toBool().value)
+    override fun or(other: JRLogic<*>): JRBool {
+        return if (this.value || other.value()) TRUE else FALSE
     }
 
-    override fun or(other: JRType<*>): JRBool {
-        return if (this.value || other.toBool().value) TRUE else FALSE
+    override fun and(other: JRLogic<*>): JRBool {
+        return if (this.value && other.value()) TRUE else FALSE
     }
 
-    override fun and(other: JRType<*>): JRBool {
-        return if (this.value && other.toBool().value) TRUE else FALSE
+    override fun xor(other: JRLogic<*>): JRBool {
+        return if (this.value != other.value()) TRUE else FALSE
     }
 
-    override fun xor(other: JRType<*>): JRBool {
-        return if (this.value != other.toBool().value) TRUE else FALSE
-    }
-
-    override fun toBool(): JRBool {
-        return this
+    override fun compareTo(other: JRComparable): Int {
+        if (other !is JRBool) {
+            throw IllegalArgumentException("Cannot compare JRBool with ${other::class.simpleName}")
+        }
+        return this.value.compareTo(other.value)
     }
 
     override fun toString(): String {
@@ -76,6 +51,14 @@ class JRBool : JRType<JRBool> {
 
     override fun hashCode(): Int {
         return value.hashCode()
+    }
+
+    override fun get(name: String): JRType<*> {
+        TODO("Not yet implemented")
+    }
+
+    override fun env(): Environment {
+        TODO("Not yet implemented")
     }
 
     companion object {

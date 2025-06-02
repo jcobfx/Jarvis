@@ -17,7 +17,7 @@ class GlobalEnvironmentConfiguration {
                         } else if (arguments[0] is JRLiteral && arguments[0].toString().contains("{}")) {
                             println(formatString(arguments[0].toString(), arguments.subList(1, arguments.size)))
                         } else {
-                            println(arguments.joinToString(", "))
+                            println(arguments.joinToString())
                         }
                         return JRNone.NONE
                     }

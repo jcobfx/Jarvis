@@ -10,7 +10,7 @@ class EmptyStatement : Statement() {
     }
 
     override fun toString(): String {
-        return "EmptyStatement()"
+        return "<<EmptyStatement>>"
     }
 }
 
@@ -20,37 +20,45 @@ class ExpressionStatement(val expression: Expression) : Statement() {
     }
 
     override fun toString(): String {
-        return "ExpressionStatement(expression=$expression)"
+        return "$expression"
     }
 }
 
-class ClassAssignmentStatement(val identifier: String, val parameters: List<String>, val statements: List<Statement>) : Statement() {
+class ClassAssignmentStatement(
+    val identifier: String, val parameters: List<String>, val statements: List<Statement>,
+    val internal: Boolean
+) : Statement() {
     override fun <T> accept(visitor: StatementVisitor<T>): T {
         return visitor.visitClassAssignmentStatement(this)
     }
 
     override fun toString(): String {
-        return "ClassAssignmentStatement(identifier='$identifier', statements=$statements)"
+        return "${if (internal) "this." else ""}$identifier => (${parameters.joinToString(", ")})\n" +
+                statements.joinToString("\n")
     }
 }
 
-class ConsumerAssignmentStatement(val identifier: String, val parameters: List<String>, val statements: List<Statement>) : Statement() {
+class ConsumerAssignmentStatement(
+    val identifier: String, val parameters: List<String>, val statements: List<Statement>,
+    val internal: Boolean
+) : Statement() {
     override fun <T> accept(visitor: StatementVisitor<T>): T {
         return visitor.visitConsumerAssignmentStatement(this)
     }
 
     override fun toString(): String {
-        return "ConsumerAssignmentStatement(identifier='$identifier', statements=$statements)"
+        return "${if (internal) "this." else ""}$identifier => (${parameters.joinToString(", ")})\n" +
+                statements.joinToString("\n")
     }
 }
 
-class AssignmentStatement(val identifier: String, val expression: Expression) : Statement() {
+class AssignmentStatement(val identifier: String, val expression: Expression, val internal: Boolean) : Statement() {
     override fun <T> accept(visitor: StatementVisitor<T>): T {
         return visitor.visitAssignmentStatement(this)
     }
 
     override fun toString(): String {
-        return "AssignmentStatement(identifier='$identifier', expression=$expression)"
+        return "${if (internal) "this." else ""}$identifier = $expression)"
     }
 }
 
@@ -60,7 +68,7 @@ class ReturnStatement(val expression: Expression?) : Statement() {
     }
 
     override fun toString(): String {
-        return "ReturnStatement(expression=$expression)"
+        return "return ${expression ?: ""}"
     }
 }
 

@@ -1,5 +1,6 @@
 package pl.com.foks.jarvis.interpreter
 
+import pl.com.foks.jarvis.exceptions.IllegalOperationException
 import pl.com.foks.jarvis.exceptions.InterpreterException
 import pl.com.foks.jarvis.exceptions.InvalidExpressionException
 import pl.com.foks.jarvis.exceptions.UnknownOperatorException
@@ -25,9 +26,12 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
         return JRTuple()
     }
 
-    override fun visitLogicalExpression(expression: LogicalExpression): JRBool {
+    override fun visitLogicalExpression(expression: LogicalExpression): JRType<*> {
         val left = expression.left.accept(this)
         val right = expression.right.accept(this)
+        if (left !is JRLogic<*> || right !is JRLogic<*>) {
+            throw IllegalOperationException(expression.operator)
+        }
         return when (expression.operator) {
             TokenType.AND -> left.and(right)
             TokenType.OR -> left.or(right)
@@ -40,16 +44,16 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
         val left = expression.left.accept(this)
         val right = expression.right.accept(this)
         return when (expression.operator) {
-            TokenType.PLUS -> left.plus(right)
-            TokenType.MINUS -> left.minus(right)
-            TokenType.MULTIPLY -> left.times(right)
-            TokenType.DIVIDE -> left.div(right)
-            TokenType.EQUALS_EQUALS -> if (left == right) JRBool.TRUE else JRBool.FALSE
-            TokenType.NOT_EQUALS -> if (left != right) JRBool.TRUE else JRBool.FALSE
-            TokenType.LESS_THAN -> if (left < right) JRBool.TRUE else JRBool.FALSE
-            TokenType.LESS_THAN_EQUALS -> if (left <= right) JRBool.TRUE else JRBool.FALSE
-            TokenType.GREATER_THAN -> if (left > right) JRBool.TRUE else JRBool.FALSE
-            TokenType.GREATER_THAN_EQUALS -> if (left >= right) JRBool.TRUE else JRBool.FALSE
+            TokenType.PLUS -> plus(left, right)
+            TokenType.MINUS -> minus(left, right)
+            TokenType.MULTIPLY -> times(left, right)
+            TokenType.DIVIDE -> div(left, right)
+            TokenType.EQUALS_EQUALS -> if (compare(left, right) == 0) JRBool.TRUE else JRBool.FALSE
+            TokenType.NOT_EQUALS -> if (compare(left, right) != 0) JRBool.TRUE else JRBool.FALSE
+            TokenType.LESS_THAN -> if (compare(left, right) < 0) JRBool.TRUE else JRBool.FALSE
+            TokenType.LESS_THAN_EQUALS -> if (compare(left, right) <= 0) JRBool.TRUE else JRBool.FALSE
+            TokenType.GREATER_THAN -> if (compare(left, right) > 0) JRBool.TRUE else JRBool.FALSE
+            TokenType.GREATER_THAN_EQUALS -> if (compare(left, right) >= 0) JRBool.TRUE else JRBool.FALSE
             else -> throw UnknownOperatorException(expression.operator)
         }
     }
@@ -57,8 +61,8 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
     override fun visitUnaryExpression(expression: UnaryExpression): JRType<*> {
         val operand = expression.operand.accept(this)
         return when (expression.operator) {
-            TokenType.MINUS -> -operand
-            TokenType.NOT -> !operand
+            TokenType.MINUS -> unaryMinus(operand)
+            TokenType.NOT -> not(operand)
             else -> throw UnknownOperatorException(expression.operator)
         }
     }
@@ -67,7 +71,7 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
         return when (expression.property) {
             is PrimaryExpression -> expression.namespace.accept(this).get(expression.property.value)
             is GetExpression -> expression.property.accept(
-                Interpreter(expression.namespace.accept(this).environment)
+                Interpreter(expression.namespace.accept(this).env())
             )
 
             else -> throw InvalidExpressionException(expression.property)
@@ -100,6 +104,7 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
             TokenType.TRUE -> JRBool.TRUE
             TokenType.FALSE -> JRBool.FALSE
             TokenType.NONE -> JRNone.NONE
+//            TokenType.THIS -> environment?.getThis() ?: throw IllegalStateException("Environment is null")
             else -> throw IllegalArgumentException("Unknown primary type: ${expression.type}")
         }
     }
@@ -121,7 +126,8 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
             statement.statements
         )
         clazz.init()
-        environment?.assign(statement.identifier, clazz)
+        if (statement.internal) environment?.assignThis(statement.identifier, clazz)
+        else environment?.assign(statement.identifier, clazz)
         return JRNone.NONE
     }
 
@@ -132,13 +138,15 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
             statement.parameters,
             statement.statements
         )
-        environment?.assign(statement.identifier, consumer)
+        if (statement.internal) environment?.assignThis(statement.identifier, consumer)
+        else environment?.assign(statement.identifier, consumer)
         return JRNone.NONE
     }
 
     override fun visitAssignmentStatement(statement: AssignmentStatement): JRType<*> {
         val value = statement.expression.accept(this)
-        environment?.assign(statement.identifier, value)
+        if (statement.internal) environment?.assignThis(statement.identifier, value)
+        else environment?.assign(statement.identifier, value)
         return JRNone.NONE
     }
 
@@ -148,5 +156,70 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
             return JRNone.NONE
         }
         return value
+    }
+
+    fun plus(left: JRType<*>, right: JRType<*>): JRType<*> {
+        return if (left is JRPlus<*> && right is JRPlus<*>) {
+            left.plus(right)
+        } else {
+            throw IllegalOperationException(TokenType.PLUS)
+        }
+    }
+
+    fun minus(left: JRType<*>, right: JRType<*>): JRType<*> {
+        return if (left is JRMinus<*> && right is JRMinus<*>) {
+            left.minus(right)
+        } else {
+            throw IllegalOperationException(TokenType.MINUS)
+        }
+    }
+
+    fun times(left: JRType<*>, right: JRType<*>): JRType<*> {
+        return if (left is JRTimes<*> && right is JRTimes<*>) {
+            left.times(right)
+        } else {
+            throw IllegalOperationException(TokenType.MULTIPLY)
+        }
+    }
+
+    fun div(left: JRType<*>, right: JRType<*>): JRType<*> {
+        return if (left is JRDiv<*> && right is JRDiv<*>) {
+            left.div(right)
+        } else {
+            throw IllegalOperationException(TokenType.DIVIDE)
+        }
+    }
+
+    fun rem(left: JRType<*>, right: JRType<*>): JRType<*> {
+        TODO("Implement remainder operation")
+//        return if (left is JRRem<*> && right is JRRem<*>) {
+//            left.rem(right)
+//        } else {
+//            throw IllegalOperationException(TokenType.REMAINDER)
+//        }
+    }
+
+    fun compare(left: JRType<*>, right: JRType<*>): Int {
+        return if (left is JRComparable && right is JRComparable) {
+            left.compareTo(right)
+        } else {
+            throw IllegalOperationException(TokenType.EQUALS_EQUALS)
+        }
+    }
+
+    fun unaryMinus(operand: JRType<*>): JRType<*> {
+        return if (operand is JRUnaryMinus<*>) {
+            operand.unaryMinus()
+        } else {
+            throw IllegalOperationException(TokenType.MINUS)
+        }
+    }
+
+    fun not(operand: JRType<*>): JRType<*> {
+        return if (operand is JRLogic<*>) {
+            operand.not()
+        } else {
+            throw IllegalOperationException(TokenType.NOT)
+        }
     }
 }

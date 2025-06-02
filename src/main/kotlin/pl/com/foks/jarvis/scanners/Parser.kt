@@ -28,21 +28,28 @@ class Parser {
         val statement = when (token.type) {
             TokenType.EOF -> throw UnexpectedEndOfInputException()
             TokenType.EOL -> return EmptyStatement()
-            TokenType.IDENTIFIER -> {
+            TokenType.IDENTIFIER, TokenType.THIS -> {
+                var token = token
+                var internal = false
+                if (token.type == TokenType.THIS) {
+                    consumeExpected(TokenType.DOT)
+                    token = consumeExpected(TokenType.IDENTIFIER)
+                    internal = true
+                }
+
                 if (peek().type == TokenType.EQUALS) {
                     consume()
-                    parseAssignmentStatement(token)
+                    parseAssignmentStatement(token, internal)
                 } else if (check(TokenType.FEED)) {
                     consume()
-                    parseConsumerAssignmentStatement(token)
+                    parseConsumerAssignmentStatement(token, internal)
                 } else {
                     parseExpressionStatement(token)
                 }
             }
 
-            TokenType.NUMBER, TokenType.LITERAL, TokenType.TRUE, TokenType.FALSE, TokenType.PARENTHESES_OPEN -> parseExpressionStatement(
-                token
-            )
+            TokenType.NUMBER, TokenType.LITERAL, TokenType.TRUE, TokenType.FALSE,
+            TokenType.PARENTHESES_OPEN -> parseExpressionStatement(token)
 
             else -> throw UnexpectedTokenException(
                 arrayOf(
@@ -52,7 +59,8 @@ class Parser {
                     TokenType.TRUE,
                     TokenType.FALSE,
                     TokenType.PARENTHESES_OPEN,
-                    TokenType.EOL
+                    TokenType.EOL,
+                    TokenType.THIS,
                 ),
                 token
             )
@@ -61,12 +69,12 @@ class Parser {
         return statement
     }
 
-    private fun parseAssignmentStatement(token: Token): Statement {
+    private fun parseAssignmentStatement(token: Token, internal: Boolean): Statement {
         val expression = parseLogicalExpression(consume())
-        return AssignmentStatement(token.value, expression)
+        return AssignmentStatement(token.value, expression, internal)
     }
 
-    private fun parseConsumerAssignmentStatement(token: Token): Statement {
+    private fun parseConsumerAssignmentStatement(token: Token, internal: Boolean): Statement {
         val parameters = mutableListOf<String>()
         consumeExpected(TokenType.PARENTHESES_OPEN)
         while (check(TokenType.IDENTIFIER)) {
@@ -84,13 +92,13 @@ class Parser {
         consumeExpected(TokenType.RETURN)
         if (check(TokenType.CLASS)) {
             consume()
-            return ClassAssignmentStatement(token.value, parameters, body)
+            return ClassAssignmentStatement(token.value, parameters, body, internal)
         } else if (check(TokenType.EOL, TokenType.EOF)) {
             body.add(parseReturnStatement(null))
         } else {
             body.add(parseReturnStatement(consume()))
         }
-        return ConsumerAssignmentStatement(token.value, parameters, body)
+        return ConsumerAssignmentStatement(token.value, parameters, body, internal)
     }
 
     private fun isAtEnd(): Boolean {
@@ -220,7 +228,8 @@ class Parser {
 
     private fun parsePrimaryExpression(token: Token): Expression {
         return when (token.type) {
-            TokenType.NUMBER, TokenType.IDENTIFIER, TokenType.LITERAL, TokenType.TRUE, TokenType.FALSE, TokenType.NONE -> {
+            TokenType.NUMBER, TokenType.IDENTIFIER, TokenType.LITERAL, TokenType.TRUE, TokenType.FALSE,
+            TokenType.NONE -> {
                 val value = token.value
                 PrimaryExpression(value, token.type)
             }

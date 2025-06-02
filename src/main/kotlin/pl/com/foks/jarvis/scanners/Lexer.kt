@@ -11,6 +11,7 @@ class Lexer {
         "return" to TokenType.RETURN,
         "class" to TokenType.CLASS,
         "none" to TokenType.NONE,
+        "this" to TokenType.THIS,
     )
 
     private var tokens = mutableListOf<Token>()
@@ -200,7 +201,7 @@ enum class TokenType {
     FEED,
     COMMA, DOT,
 
-    RETURN, CLASS,
+    RETURN, CLASS, THIS,
 
     EOL, EOF
 }

@@ -38,8 +38,8 @@ class Environment {
     }
 
     fun assign(name: String, value: JRType<*>) {
-        if (globals.containsKey(name)) {
-            throw AssignmentException(name, value)
+        if (isGlobal(name)) {
+            throw AssignmentException(name, value, "Cannot assign to global variable")
         } else if (mutable && !parentContains(name)) {
             variables[name] = value
         } else if (parent != null) {
@@ -49,12 +49,24 @@ class Environment {
         }
     }
 
+    fun assignThis(name: String, value: JRType<*>) {
+        if (mutable && !isGlobal(name)) {
+            variables[name] = value
+        } else {
+            throw AssignmentException(name, value, "Cannot assign to variable in this context")
+        }
+    }
+
     private fun contains(name: String): Boolean {
         return globals.containsKey(name) || variables.containsKey(name) || (parent?.contains(name) ?: false)
     }
 
     private fun parentContains(name: String): Boolean {
         return parent?.contains(name) ?: false
+    }
+
+    private fun isGlobal(name: String): Boolean {
+        return globals.containsKey(name)
     }
 
     override fun toString(): String {
