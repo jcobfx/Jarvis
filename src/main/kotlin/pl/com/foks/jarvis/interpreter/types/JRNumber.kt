@@ -39,14 +39,13 @@ class JRNumber(val value: Double) : JRType<JRNumber>, JRComparable, JRPlus<JRNum
     }
 
     override fun rem(other: JRRem<*>): JRNumber {
-        TODO("Implement remainder operation")
-//        if (other is JRNumber) {
-//            if (other.value == 0.0) {
-//                throw ArithmeticException("Division by zero")
-//            }
-//            return JRNumber(this.value % other.value)
-//        }
-//        throw IllegalOperationException(TokenType.REMAINDER)
+        if (other is JRNumber) {
+            if (other.value == 0.0) {
+                throw ArithmeticException("Division by zero")
+            }
+            return JRNumber(this.value % other.value)
+        }
+        throw IllegalOperationException(TokenType.REMAINDER)
     }
 
     override fun unaryMinus(): JRNumber {

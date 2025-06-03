@@ -70,7 +70,7 @@ class Parser {
     }
 
     private fun parseAssignmentStatement(token: Token, internal: Boolean): Statement {
-        val expression = parseLogicalExpression(consume())
+        val expression = parseQuestionExpression(consume())
         return AssignmentStatement(token.value, expression, internal)
     }
 
@@ -155,8 +155,23 @@ class Parser {
     }
 
     private fun parseExpressionStatement(token: Token): Statement {
-        val expression = parseLogicalExpression(token)
+        val expression = parseQuestionExpression(token)
         return ExpressionStatement(expression)
+    }
+
+    private fun parseQuestionExpression(token: Token): Expression {
+        val condition = parseLogicalExpression(token)
+        if (check(TokenType.QUESTION)) {
+            consume()
+            val trueBranch = parseQuestionExpression(consume())
+            var falseBranch: Expression? = null
+            if (check(TokenType.COLON)) {
+                consume()
+                falseBranch = parseQuestionExpression(consume())
+            }
+            return QuestionExpression(condition, trueBranch, falseBranch)
+        }
+        return condition
     }
 
     private fun parseLogicalExpression(token: Token): Expression {
@@ -172,7 +187,8 @@ class Parser {
     private fun parseBinaryExpression(token: Token): Expression {
         val left = parseUnaryExpression(token)
         if (check(
-                TokenType.PLUS, TokenType.MINUS, TokenType.MULTIPLY, TokenType.DIVIDE,
+                TokenType.PLUS, TokenType.MINUS, TokenType.MULTIPLY,
+                TokenType.DIVIDE, TokenType.REMAINDER,
                 TokenType.EQUALS_EQUALS, TokenType.NOT_EQUALS,
                 TokenType.LESS_THAN, TokenType.GREATER_THAN,
                 TokenType.LESS_THAN_EQUALS, TokenType.GREATER_THAN_EQUALS
@@ -215,7 +231,7 @@ class Parser {
                     TokenType.TRUE, TokenType.FALSE, TokenType.PARENTHESES_OPEN
                 )
             ) {
-                elements.add(parseLogicalExpression(consume()))
+                elements.add(parseQuestionExpression(consume()))
                 if (check(TokenType.COMMA)) {
                     consume()
                 }

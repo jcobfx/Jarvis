@@ -6,11 +6,22 @@ abstract class Expression {
     abstract fun <T> accept(visitor: ExpressionVisitor<T>): T
 }
 
+class QuestionExpression(val condition: Expression, val trueBranch: Expression, val falseBranch: Expression?) :
+    Expression() {
+    override fun <T> accept(visitor: ExpressionVisitor<T>): T {
+        return visitor.visitQuestionExpression(this)
+    }
+
+    override fun toString(): String {
+        return "$condition ? $trueBranch ${falseBranch?.let { ": $it" } ?: ""}"
+    }
+}
+
 class LogicalExpression(val left: Expression, val operator: TokenType, val right: Expression) : Expression() {
+
     override fun <T> accept(visitor: ExpressionVisitor<T>): T {
         return visitor.visitLogicalExpression(this)
     }
-
     override fun toString(): String {
         return "$left $operator $right"
     }
@@ -72,11 +83,16 @@ class PrimaryExpression(val value: String, val type: TokenType) : Expression() {
     }
 
     override fun toString(): String {
-        return value
+        return when (type) {
+            TokenType.LITERAL -> "\"$value\""
+            TokenType.NUMBER -> value.toDouble().toString()
+            else -> value
+        }
     }
 }
 
 interface ExpressionVisitor<T> {
+    fun visitQuestionExpression(expression: QuestionExpression): T
     fun visitLogicalExpression(expression: LogicalExpression): T
     fun visitBinaryExpression(expression: BinaryExpression): T
     fun visitUnaryExpression(expression: UnaryExpression): T

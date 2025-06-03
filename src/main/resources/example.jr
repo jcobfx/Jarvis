@@ -1,7 +1,7 @@
 classA => (a)
     getA => ()
         this.a => ()
-            ("classA.getA.a") => print
+            ("1 " "classA.getA.a") => print
         return
     return a
 
@@ -11,16 +11,20 @@ classA => (a)
     oA = (5) => A
 return class
 
-objectA = ("dupa") => classA
+objectA = ("clone") => classA
 
-(() => classA.getA) => print
+("2 " () => classA.getA) => print
 () => () => classA.getA
 
-(objectA.A.x) => print
+("3 " objectA.A.x) => print
 
-x = (2) => (1 2 3).get
-(x) => print
+x = (2) => (1.1 2.2 3.3).get
+("4 " x) => print
 
-(() => "57".toNumber) => print
+("5 " () => "57.68".toNumber) => print
 
-(classA.oA.x) => print
+("6 " classA.oA.x) => print
+
+("7 " true ? false ? 8 : 4 : 0) => print
+
+("8 " 20 % 6) => print

@@ -26,6 +26,18 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
         return JRTuple()
     }
 
+    override fun visitQuestionExpression(expression: QuestionExpression): JRType<*> {
+        val condition = expression.condition.accept(this)
+        if (condition !is JRLogic<*>) {
+            throw IllegalOperationException(TokenType.QUESTION)
+        }
+        return if (condition.value()) {
+            expression.trueBranch.accept(this)
+        } else {
+            expression.falseBranch?.accept(this) ?: JRNone.NONE
+        }
+    }
+
     override fun visitLogicalExpression(expression: LogicalExpression): JRType<*> {
         val left = expression.left.accept(this)
         val right = expression.right.accept(this)
@@ -48,6 +60,7 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
             TokenType.MINUS -> minus(left, right)
             TokenType.MULTIPLY -> times(left, right)
             TokenType.DIVIDE -> div(left, right)
+            TokenType.REMAINDER -> rem(left, right)
             TokenType.EQUALS_EQUALS -> if (compare(left, right) == 0) JRBool.TRUE else JRBool.FALSE
             TokenType.NOT_EQUALS -> if (compare(left, right) != 0) JRBool.TRUE else JRBool.FALSE
             TokenType.LESS_THAN -> if (compare(left, right) < 0) JRBool.TRUE else JRBool.FALSE
@@ -104,7 +117,6 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
             TokenType.TRUE -> JRBool.TRUE
             TokenType.FALSE -> JRBool.FALSE
             TokenType.NONE -> JRNone.NONE
-//            TokenType.THIS -> environment?.getThis() ?: throw IllegalStateException("Environment is null")
             else -> throw IllegalArgumentException("Unknown primary type: ${expression.type}")
         }
     }
@@ -191,12 +203,11 @@ class Interpreter(private val environment: Environment? = Environment(null)) : E
     }
 
     fun rem(left: JRType<*>, right: JRType<*>): JRType<*> {
-        TODO("Implement remainder operation")
-//        return if (left is JRRem<*> && right is JRRem<*>) {
-//            left.rem(right)
-//        } else {
-//            throw IllegalOperationException(TokenType.REMAINDER)
-//        }
+        return if (left is JRRem<*> && right is JRRem<*>) {
+            left.rem(right)
+        } else {
+            throw IllegalOperationException(TokenType.REMAINDER)
+        }
     }
 
     fun compare(left: JRType<*>, right: JRType<*>): Int {

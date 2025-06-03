@@ -49,6 +49,10 @@ class Lexer {
                 '-' -> addToken(TokenType.MINUS)
                 '*' -> addToken(TokenType.MULTIPLY)
                 '/' -> addToken(TokenType.DIVIDE)
+                '%' -> addToken(TokenType.REMAINDER)
+
+                '?' -> addToken(TokenType.QUESTION)
+                ':' -> addToken(TokenType.COLON)
 
                 '<' -> {
                     if (peek() == '=') {
@@ -123,7 +127,7 @@ class Lexer {
 
                 in '0'..'9' -> {
                     val start = current - 1
-                    while (current < chars.size && peek().isDigit()) {
+                    while (current < chars.size && (peek().isDigit() || checkFloatingPoint())) {
                         consume()
                     }
                     val number = String(chars, start, current - start)
@@ -180,11 +184,18 @@ class Lexer {
     private fun peek(): Char {
         return chars[current]
     }
+
+    private fun checkFloatingPoint(): Boolean {
+        if (current >= chars.size) return false
+        val toReturn = chars[current] == '.' && chars[current + 1].isDigit()
+        if (toReturn) consume()
+        return toReturn
+    }
 }
 
 enum class TokenType {
     EQUALS,
-    PLUS, MINUS, MULTIPLY, DIVIDE,
+    PLUS, MINUS, MULTIPLY, DIVIDE, REMAINDER,
     NOT, AND, OR, XOR,
 
     EQUALS_EQUALS, NOT_EQUALS, LESS_THAN, GREATER_THAN,
@@ -197,6 +208,8 @@ enum class TokenType {
     IDENTIFIER, LITERAL, NUMBER,
     TRUE, FALSE,
     NONE,
+
+    QUESTION, COLON,
 
     FEED,
     COMMA, DOT,
